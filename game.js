@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id), N=4, KEY='merge-numbers-v1.2';
-let grid=Array(16).fill(0),score=0,best=0,history=null,won=false,over=false,sound=true,freeUndos=1,removeMode=false,locked=false,ctx=null,nextSpawn=null,nextValue=2,milestones=[];
+let grid=Array(16).fill(0),score=0,best=0,history=null,won=false,over=false,sound=true,freeUndos=1,removeMode=false,locked=false,ctx=null,nextSpawn=null,nextValue=2,milestones=[],combo=0,mergeCharge=0;
 const sdk={api:null,busy:false};
 function status(s=''){$('adStatus').textContent=s}
 async function initSDK(){if(!window.YaGames){status('Локальный режим · реклама отключена');return}try{sdk.api=await YaGames.init();sdk.api.features?.LoadingAPI?.ready?.();status('')}catch(e){status('SDK недоступен');console.warn(e)}}
@@ -8,8 +8,8 @@ function pauseGame(){try{sdk.api?.features?.GameplayAPI?.stop?.()}catch(e){}}
 function resumeGame(){try{sdk.api?.features?.GameplayAPI?.start?.()}catch(e){}}
 function fullscreen(done){if(!sdk.api?.adv?.showFullscreenAdv||sdk.busy){done();return}sdk.busy=true;pauseGame();let finished=false;const finish=()=>{if(finished)return;finished=true;sdk.busy=false;resumeGame();done()};try{sdk.api.adv.showFullscreenAdv({callbacks:{onClose:finish,onError:finish}})}catch(e){finish()}}
 function rewarded(done){if(!sdk.api?.adv?.showRewardedVideo||sdk.busy){status('Реклама за награду доступна только в Яндекс Играх');return}sdk.busy=true;pauseGame();let rewarded=false,finished=false;const finish=()=>{if(finished)return;finished=true;sdk.busy=false;resumeGame();if(rewarded)done();else status('Награда не получена: ролик не завершён')};try{sdk.api.adv.showRewardedVideo({callbacks:{onRewarded:()=>{rewarded=true},onClose:finish,onError:finish}})}catch(e){finish()}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify({grid,score,best,won,sound,freeUndos,freeRemovals:freeUndos,history,nextSpawn,nextValue,milestones}))}catch(e){}}
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(!x||!Array.isArray(x.grid)||x.grid.length!==16||!x.grid.every(valid)||!Number.isSafeInteger(x.score)||x.score<0)return false;grid=x.grid;score=x.score;best=Math.max(x.best||0,score);won=!!x.won;sound=x.sound!==false;freeUndos=x.freeRemovals===0?0:(x.freeRemovals===1?1:(x.freeUndos===0?0:1));history=x.history&&Array.isArray(x.history.grid)&&x.history.grid.length===16&&x.history.grid.every(valid)?x.history:null;over=!possible();nextSpawn=Number.isInteger(x.nextSpawn)&&x.nextSpawn>=0&&x.nextSpawn<16?x.nextSpawn:null;nextValue=x.nextValue===4?4:2;milestones=Array.isArray(x.milestones)?x.milestones.filter(v=>[512,1024,2048].includes(v)):[];chooseTarget();return true}catch(e){return false}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({grid,score,best,won,sound,freeUndos,freeRemovals:freeUndos,history,nextSpawn,nextValue,milestones,combo,mergeCharge}))}catch(e){}}
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(!x||!Array.isArray(x.grid)||x.grid.length!==16||!x.grid.every(valid)||!Number.isSafeInteger(x.score)||x.score<0)return false;grid=x.grid;score=x.score;best=Math.max(x.best||0,score);won=!!x.won;sound=x.sound!==false;freeUndos=x.freeRemovals===0?0:(x.freeRemovals===1?1:(x.freeUndos===0?0:1));history=x.history&&Array.isArray(x.history.grid)&&x.history.grid.length===16&&x.history.grid.every(valid)?x.history:null;over=!possible();nextSpawn=Number.isInteger(x.nextSpawn)&&x.nextSpawn>=0&&x.nextSpawn<16?x.nextSpawn:null;nextValue=x.nextValue===4?4:2;milestones=Array.isArray(x.milestones)?x.milestones.filter(v=>[512,1024,2048].includes(v)):[];combo=Number.isInteger(x.combo)&&x.combo>=0?Math.min(x.combo,999):0;mergeCharge=Number.isInteger(x.mergeCharge)&&x.mergeCharge>=0?x.mergeCharge%10:0;chooseTarget();return true}catch(e){return false}}
 function valid(v){return Number.isSafeInteger(v)&&v>=0&&(v===0||(v&(v-1))===0)}
 function tone(f=400){if(!sound)return;try{ctx??=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f;g.gain.setValueAtTime(.035,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.09);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.1)}catch(e){}}
 function chooseTarget(){
@@ -20,9 +20,9 @@ function chooseTarget(){
 }
 function rollValue(){return Math.random()<.9?2:4}
 function spawn(){chooseTarget();if(nextSpawn===null)return;grid[nextSpawn]=nextValue;nextSpawn=null;nextValue=rollValue()}
-function reset(){removeMode=false;locked=false;grid=Array(16).fill(0);score=0;history=null;won=false;over=false;freeUndos=1;nextSpawn=null;nextValue=rollValue();milestones=[];spawn();spawn();chooseTarget();hideModal();save();render()}
+function reset(){removeMode=false;locked=false;grid=Array(16).fill(0);score=0;history=null;won=false;over=false;freeUndos=1;nextSpawn=null;nextValue=rollValue();milestones=[];combo=0;mergeCharge=0;spawn();spawn();chooseTarget();hideModal();save();render()}
 function restart(){if(!confirm('Начать новую игру?'))return;reset()}
-function render(changed=[]){const b=$('board');b.classList.toggle('remove-mode',removeMode);b.innerHTML='';grid.forEach((v,i)=>{const d=document.createElement('div');d.className='tile'+(v?'':' empty')+(v>=1024?' big':'')+(changed.includes(i)?' changed':'')+(i===nextSpawn&&!removeMode?' target':'');if(v)d.dataset.v=String(Math.min(v,2048));d.textContent=v||(i===nextSpawn&&!removeMode?'+'+nextValue:'');d.dataset.index=i;b.append(d)});$('score').textContent=score.toLocaleString('ru-RU');$('best').textContent=best.toLocaleString('ru-RU');$('max').textContent=Math.max(...grid).toLocaleString('ru-RU');$('sound').setAttribute('aria-label',sound?'Выключить звук':'Включить звук');$('sound').querySelectorAll('.sound-on').forEach(e=>e.style.display=sound?'':'none');$('sound').querySelectorAll('.sound-off').forEach(e=>e.style.display=sound?'none':'');const highest=Math.max(...grid);$('progressFill').style.width=Math.min(100,(Math.max(2,highest)/2048)*100)+'%';$('progressLabel').textContent=highest>=2048?'Цель достигнута!':highest+' / 2048';$('undo').disabled=locked||freeUndos===0||!grid.some(Boolean);$('rewardUndo').disabled=locked||!grid.some(Boolean)||!sdk.api?.adv?.showRewardedVideo;$('undo').textContent=removeMode?'Отмена выбора':'✕ Удалить ('+freeUndos+')';$('rewardUndo').textContent='▶ Удалить за рекламу';$('modalReward').disabled=locked||!grid.some(Boolean)||!sdk.api?.adv?.showRewardedVideo}
+function render(changed=[]){const b=$('board');b.classList.toggle('remove-mode',removeMode);b.innerHTML='';grid.forEach((v,i)=>{const d=document.createElement('div');d.className='tile'+(v?'':' empty')+(v>=1024?' big':'')+(changed.includes(i)?' changed':'')+(i===nextSpawn&&!removeMode?' target':'');if(v)d.dataset.v=String(Math.min(v,2048));d.textContent=v||(i===nextSpawn&&!removeMode?'+'+nextValue:'');d.dataset.index=i;b.append(d)});$('comboLabel').textContent='КОМБО ×'+Math.max(1,Math.min(5,combo));$('comboLabel').classList.toggle('active',combo>=2);$('chargeLabel').textContent='ЗАРЯД БОНУСА '+mergeCharge+'/10';$('score').textContent=score.toLocaleString('ru-RU');$('best').textContent=best.toLocaleString('ru-RU');$('max').textContent=Math.max(...grid).toLocaleString('ru-RU');$('sound').setAttribute('aria-label',sound?'Выключить звук':'Включить звук');$('sound').querySelectorAll('.sound-on').forEach(e=>e.style.display=sound?'':'none');$('sound').querySelectorAll('.sound-off').forEach(e=>e.style.display=sound?'none':'');const highest=Math.max(...grid);$('progressFill').style.width=Math.min(100,(Math.max(2,highest)/2048)*100)+'%';$('progressLabel').textContent=highest>=2048?'Цель достигнута!':highest+' / 2048';$('undo').disabled=locked||freeUndos===0||!grid.some(Boolean);$('rewardUndo').disabled=locked||!grid.some(Boolean)||!sdk.api?.adv?.showRewardedVideo;$('undo').textContent=removeMode?'Отмена выбора':'✕ Удалить ('+freeUndos+')';$('rewardUndo').textContent='▶ Удалить за рекламу';$('modalReward').disabled=locked||!grid.some(Boolean)||!sdk.api?.adv?.showRewardedVideo}
 function modal(title,body,continueGame=false){$('again').classList.toggle('hidden',continueGame);$('modalReward').classList.toggle('hidden',continueGame);$('modalTitle').textContent=title;$('modalText').textContent=body;$('continue').classList.toggle('hidden',!continueGame);$('overlay').classList.remove('hidden')}
 function hideModal(){$('overlay').classList.add('hidden')}
 function possible(){if(grid.includes(0))return true;for(let r=0;r<4;r++)for(let c=0;c<4;c++){const i=r*4+c;if(c<3&&grid[i]===grid[i+1])return true;if(r<3&&grid[i]===grid[i+4])return true}return false}
@@ -40,18 +40,18 @@ function planMove(dir){
    if(join){tracks.push({from:second.id,to:target,value:second.value});merged.push(target);gain.value+=value;j++}
   }
  }
- return {next,tracks,merged,gain:gain.value};
+ return {next,tracks,merged,gain:gain.value,merges:merged.length};
 }
 function animateTracks(tracks){
  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return Promise.resolve();
  const board=$('board'),cells=[...board.children];
- const moving=tracks.filter(t=>t.from!==t.to||tracks.filter(q=>q.to===t.to).length>1);
+ const counts=new Map();tracks.forEach(t=>counts.set(t.to,(counts.get(t.to)||0)+1));const moving=tracks.filter(t=>t.from!==t.to||counts.get(t.to)>1);
  if(!moving.length)return Promise.resolve();
  const layer=document.createElement('div');layer.className='motion-layer';board.append(layer);
  const ghosts=[];
  for(const t of moving){
   const a=cells[t.from],b=cells[t.to],g=a.cloneNode(true);
-  g.classList.remove('changed');g.classList.add('moving');
+  g.classList.remove('changed','target');g.classList.add('moving');a.style.opacity='0';g.style.opacity='1';
   g.style.left=a.offsetLeft+'px';g.style.top=a.offsetTop+'px';g.style.width=a.offsetWidth+'px';g.style.height=a.offsetHeight+'px';
   layer.append(g);ghosts.push({g,dx:b.offsetLeft-a.offsetLeft,dy:b.offsetTop-a.offsetTop});
  }
@@ -60,7 +60,7 @@ function animateTracks(tracks){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
    ghosts.forEach(({g,dx,dy})=>{g.style.transform=`translate(${dx}px,${dy}px)`});
   }));
-  setTimeout(()=>{layer.remove();resolve()},215);
+  setTimeout(()=>{layer.remove();resolve()},205);
  });
 }
 async function move(dir){
@@ -69,7 +69,9 @@ async function move(dir){
  if(plan.next.every((v,i)=>v===prev[i]))return;
  locked=true;history={grid:prev,score:oldScore,won,nextSpawn,nextValue,milestones:[...milestones]};
  await animateTracks(plan.tracks);
- grid=plan.next;score+=plan.gain;best=Math.max(best,score);
+ grid=plan.next;
+ if(plan.merges){combo=Math.min(combo+1,999);const multiplier=Math.min(5,Math.max(1,combo));score+=plan.gain*multiplier;mergeCharge+=plan.merges;if(mergeCharge>=10){const earned=Math.floor(mergeCharge/10);freeUndos+=earned;mergeCharge%=10;status('Бонус! +'+earned+' удаление плитки')}}else{combo=0}
+ best=Math.max(best,score);
  spawn();chooseTarget();locked=false;tone(plan.gain?640:360);save();
  render([...new Set([...plan.merged,...grid.map((v,i)=>v!==plan.next[i]?i:-1).filter(i=>i>=0)])]);
  const reached=[512,1024,2048].find(v=>grid.some(t=>t>=v)&&!milestones.includes(v));
@@ -78,7 +80,7 @@ async function move(dir){
 }
 function activateRemove(useFree){if(locked||!grid.some(Boolean))return;if(useFree&&freeUndos===0)return;removeMode=true;removeFree=useFree;hideModal();status('Нажми на плитку, которую хочешь удалить');render()}
 let removeFree=true;
-function removeTile(i){if(!removeMode||locked||!Number.isInteger(i)||!grid[i])return;grid[i]=0;if(removeFree)freeUndos=Math.max(0,freeUndos-1);removeMode=false;over=false;history=null;chooseTarget();status('Плитка удалена');tone(500);save();render()}
+function removeTile(i){if(!removeMode||locked||!Number.isInteger(i)||!grid[i])return;grid[i]=0;if(removeFree)freeUndos=Math.max(0,freeUndos-1);removeMode=false;over=false;history=null;combo=0;chooseTarget();status('Плитка удалена');tone(500);save();render()}
 function cancelRemove(){removeMode=false;status('');render();if(over)modal('Ходы закончились','Удалите плитку, чтобы продолжить игру.')}
 let sx=0,sy=0;const board=$('board');board.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});board.addEventListener('click',e=>{if(!removeMode)return;const tile=e.target.closest('.tile');if(tile&&board.contains(tile))removeTile(Number(tile.dataset.index))});board.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(removeMode||Math.max(Math.abs(dx),Math.abs(dy))<24)return;move(Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'down':'up')});document.addEventListener('keydown',e=>{const dirs={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};if(e.key==='Escape'&&removeMode){cancelRemove();return}if(dirs[e.key]){e.preventDefault();move(dirs[e.key])}});
 $('restart').onclick=restart;$('again').onclick=()=>{fullscreen(reset)};$('undo').onclick=()=>removeMode?cancelRemove():activateRemove(true);$('rewardUndo').onclick=()=>rewarded(()=>activateRemove(false));$('modalReward').onclick=()=>rewarded(()=>activateRemove(false));$('continue').onclick=hideModal;$('sound').onclick=()=>{sound=!sound;save();render()};
