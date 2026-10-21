@@ -65,7 +65,7 @@ function animateTracks(tracks){
 async function move(dir){
  if(locked||over||!$('overlay').classList.contains('hidden'))return;
  const prev=grid.slice(),oldScore=score,plan=planMove(dir);
- if(plan.next.every((v,i)=>v===prev[i])){if(combo>0){combo=0;clearTimeout(comboToastTimer);$('comboToast').classList.remove('show','jackpot');$('comboTrack').classList.remove('combo-tick');status('Комбо сброшено: ход без объединения');save();render()}return;}
+ if(plan.next.every((v,i)=>v===prev[i]))return;
  locked=true;history=null;
  await animateTracks(plan.tracks);
  grid=plan.next;
