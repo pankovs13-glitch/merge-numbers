@@ -56,3 +56,6 @@
 
 /* v1.9.1: centered vector sound control */
 #sound{display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1;flex-shrink:0}#sound svg{display:block;width:22px;height:22px}
+
+/* v2.0 remove-tile power-up */
+.board.remove-mode .tile:not(.empty){cursor:crosshair;outline:2px solid #f4c96a;outline-offset:-4px;animation:removePulse 1s ease-in-out infinite alternate}.board.remove-mode .tile.empty{opacity:.6}.board.remove-mode .tile.target{outline:none}.board.remove-mode{box-shadow:0 0 0 3px #f4c96a,0 20px 60px #0004}@keyframes removePulse{to{filter:brightness(1.25)}}@media(prefers-reduced-motion:reduce){.board.remove-mode .tile{animation:none}}
