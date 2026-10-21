@@ -53,3 +53,6 @@
 
 /* v1.9 Neon Edition loading screen */
 .splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:25px;background:radial-gradient(ellipse at 50% 35%,#172d65,#08182e 72%);color:white;transition:opacity .35s ease;pointer-events:all}.splash-hide{opacity:0;pointer-events:none}.splash-title{font-size:clamp(26px,7vw,43px);font-weight:950;letter-spacing:-1px;text-align:center}.splash-title span{color:#57f5df}.splash-tiles{display:grid;grid-template-columns:repeat(2,75px);gap:10px;transform:rotate(-5deg)}.splash-tiles b{height:75px;display:grid;place-items:center;border-radius:16px;font-size:32px;color:#091c3b;background:#53e6e2;box-shadow:0 7px 28px #27f6df77}.splash-tiles b:nth-child(2){background:#7cde8b}.splash-tiles b:nth-child(3){background:#ae70fb;color:white}.splash-tiles b:nth-child(4){background:#ffc75e}.splash p{color:#b6c8e9;font-size:14px;letter-spacing:1px}
+
+/* v1.9.1: centered vector sound control */
+#sound{display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1;flex-shrink:0}#sound svg{display:block;width:22px;height:22px}
