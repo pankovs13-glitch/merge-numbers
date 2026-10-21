@@ -3,6 +3,8 @@ const $=id=>document.getElementById(id), N=4, KEY='merge-numbers-v1.2';
 let grid=Array(16).fill(0),score=0,best=0,history=null,won=false,over=false,sound=true,freeUndos=1,removeMode=false,doubleMode=false,doubleCharges=0,locked=false,ctx=null,nextSpawn=null,nextValue=2,milestones=[],combo=0,mergeCharge=0;
 const sdk={api:null,busy:false};
 function status(s=''){$('adStatus').textContent=s}
+let comboToastTimer=null;
+function animateCombo(merges,earned){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const track=$('comboTrack');track.classList.remove('combo-tick');void track.offsetWidth;track.classList.add('combo-tick');const toast=$('comboToast');toast.classList.remove('show','jackpot');void toast.offsetWidth;toast.textContent=earned?'КОМБО! +'+earned+' УДВОЕНИЕ ⚡':'+'+merges+' К КОМБО';toast.classList.add('show');if(earned){toast.classList.add('jackpot');const btn=$('doubleTile');btn.classList.remove('bonus-earned');void btn.offsetWidth;btn.classList.add('bonus-earned')}clearTimeout(comboToastTimer);comboToastTimer=setTimeout(()=>{toast.classList.remove('show','jackpot');track.classList.remove('combo-tick');$('doubleTile').classList.remove('bonus-earned')},earned?1500:650)}
 async function initSDK(){if(!window.YaGames){status('Локальный режим · реклама отключена');return}try{sdk.api=await YaGames.init();sdk.api.features?.LoadingAPI?.ready?.();status('')}catch(e){status('SDK недоступен');console.warn(e)}}
 function pauseGame(){try{sdk.api?.features?.GameplayAPI?.stop?.()}catch(e){}}
 function resumeGame(){try{sdk.api?.features?.GameplayAPI?.start?.()}catch(e){}}
@@ -70,10 +72,10 @@ async function move(dir){
  locked=true;history={grid:prev,score:oldScore,won,nextSpawn,nextValue,milestones:[...milestones]};
  await animateTracks(plan.tracks);
  grid=plan.next;
- if(plan.merges){const before=combo;combo+=plan.merges;score+=plan.gain;const earned=Math.floor(combo/5)-Math.floor(before/5);if(earned>0){doubleCharges+=earned;status('5 объединений! +'+earned+' удвоение плитки')}}
+ let earned=0;if(plan.merges){const before=combo;combo+=plan.merges;score+=plan.gain;earned=Math.floor(combo/5)-Math.floor(before/5);if(earned>0){doubleCharges+=earned;status('5 объединений! +'+earned+' удвоение плитки')}}
  best=Math.max(best,score);
  spawn();chooseTarget();locked=false;tone(plan.gain?640:360);save();
- render([...new Set([...plan.merged,...grid.map((v,i)=>v!==plan.next[i]?i:-1).filter(i=>i>=0)])]);
+ render([...new Set([...plan.merged,...grid.map((v,i)=>v!==plan.next[i]?i:-1).filter(i=>i>=0)])]);if(plan.merges)animateCombo(plan.merges,earned);
  const reached=[512,1024,2048].find(v=>grid.some(t=>t>=v)&&!milestones.includes(v));
  if(reached){milestones.push(...[512,1024,2048].filter(v=>v<=reached&&!milestones.includes(v)));if(reached===2048)won=true;save();modal(reached===2048?'2048! Победа!':'Новая вершина: '+reached+'!',reached===2048?'Цель достигнута! Можно продолжать до 4096.':'Отлично! Продолжай объединять плитки.',true)}
  else if(!possible()){over=true;modal('Ходы закончились','Результат: '+score.toLocaleString('ru-RU')+' очков. Можно удалить плитку за просмотр рекламы.')}
