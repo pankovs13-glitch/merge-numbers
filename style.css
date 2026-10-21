@@ -26,3 +26,7 @@
 
 /* v1.6: accessible touch controls and compact instructions */
 .tutorial{text-align:left}.tutorial summary{cursor:pointer;color:#72e3d2;font-weight:800;text-align:center;list-style-position:inside}.tutorial>div{padding-top:9px;text-align:center}.arrows{display:flex;align-items:center;flex-direction:column;gap:5px;margin-top:12px}.arrows>div{display:flex;gap:6px}.arrows button{min-width:56px;min-height:43px;padding:6px;background:#344b65;color:#efffff;font-size:23px;border:1px solid #52718a}.arrows button:active{background:#64dfcb;color:#142d37}.modal button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,summary:focus-visible{outline:3px solid #ffdf80;outline-offset:3px}@media(max-width:390px){.app{padding:12px 10px}.scores{gap:5px}.scores strong{font-size:21px}.board{gap:5px;border-width:5px}.arrows button{min-height:40px}}
+
+/* v1.7: milestone flow prioritizes continuing */
+.modal .primary-continue{display:block;background:#62ddc7;color:#142d37;font-size:18px;font-weight:900;min-height:58px;box-shadow:0 5px 20px #62ddc744}
+.modal .primary-continue:active{transform:scale(.98)}
