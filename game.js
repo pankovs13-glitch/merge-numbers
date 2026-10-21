@@ -72,10 +72,23 @@ async function move(dir){
  locked=true;history={grid:prev,score:oldScore,won,nextSpawn,nextValue,milestones:[...milestones]};
  await animateTracks(plan.tracks);
  grid=plan.next;
- let earned=0;if(plan.merges){const before=combo;combo+=plan.merges;score+=plan.gain;earned=Math.floor(combo/5)-Math.floor(before/5);if(earned>0){doubleCharges+=earned;status('5 объединений! +'+earned+' удвоение плитки')}}else{combo=0;status('Серия комбо прервана')}
+ let earned=0;
+ if(plan.merges===0){
+  combo=0;
+  clearTimeout(comboToastTimer);
+  $('comboToast').classList.remove('show','jackpot');
+  $('comboTrack').classList.remove('combo-tick');
+  status('Серия сброшена: ход без объединения');
+ }else{
+  const before=combo;
+  combo+=plan.merges;
+  score+=plan.gain;
+  earned=Math.floor(combo/5)-Math.floor(before/5);
+  if(earned>0){doubleCharges+=earned;status('5 объединений! +'+earned+' удвоение плитки')}
+ }
  best=Math.max(best,score);
  spawn();chooseTarget();locked=false;tone(plan.gain?640:360);save();
- render([...new Set([...plan.merged,...grid.map((v,i)=>v!==plan.next[i]?i:-1).filter(i=>i>=0)])]);if(plan.merges)animateCombo(plan.merges,earned);
+ render([...new Set([...plan.merged,...grid.map((v,i)=>v!==plan.next[i]?i:-1).filter(i=>i>=0)])]);if(plan.merges>0)animateCombo(plan.merges,earned);
  const reached=[512,1024,2048].find(v=>grid.some(t=>t>=v)&&!milestones.includes(v));
  if(reached){milestones.push(...[512,1024,2048].filter(v=>v<=reached&&!milestones.includes(v)));if(reached===2048)won=true;save();modal(reached===2048?'2048! Победа!':'Новая вершина: '+reached+'!',reached===2048?'Цель достигнута! Можно продолжать до 4096.':'Отлично! Продолжай объединять плитки.',true)}
  else if(!possible()){over=true;modal('Ходы закончились','Результат: '+score.toLocaleString('ru-RU')+' очков. Можно удалить плитку за просмотр рекламы.')}
