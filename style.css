@@ -62,3 +62,6 @@
 
 /* v2.1: combo & charge HUD */
 .combo-panel{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:9px 0 0;font-size:11px;font-weight:800;letter-spacing:.5px;color:#8fa9c1}.combo-panel .active{color:#f4c96a;text-shadow:0 0 14px #f4c96a77}.combo-panel #chargeLabel{color:#70dfcc}.motion-layer .moving{z-index:3;box-shadow:0 5px 15px #0003}.board .tile.changed{animation:tile-appear .22s cubic-bezier(.15,1.5,.4,1)}@media(max-width:390px){.combo-panel{font-size:9px}}
+
+/* v2.2 combo streak and double tile */
+.combo-track{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:6px 0 2px}.combo-track i{height:7px;border-radius:9px;background:#31475e;transition:background .15s,box-shadow .15s}.combo-track i.filled{background:#f4c96a;box-shadow:0 0 8px #f4c96a88}.controls{flex-wrap:wrap}.controls #doubleTile{background:#f4c96a;color:#253047}.controls button{min-width:calc(50% - 8px)}.controls #restart{flex-basis:100%}.board.double-mode .tile:not(.empty){outline-color:#7cf5db}.board.double-mode .tile[data-v="2048"]{opacity:.5;outline:none;cursor:not-allowed}@media(max-width:600px){.controls button{font-size:12px;padding:9px 5px}.controls #restart{flex-basis:auto}}
