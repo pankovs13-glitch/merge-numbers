@@ -82,8 +82,8 @@ async function move(dir){
  grid=plan.next;score+=plan.gain;best=Math.max(best,score);
  spawn();chooseTarget();locked=false;tone(plan.gain?640:360);save();
  render([...new Set([...plan.merged,...grid.map((v,i)=>v!==plan.next[i]?i:-1).filter(i=>i>=0)])]);
- const reached=[512,1024,2048].find(v=>grid.some(t=>t>=v)&&!milestones.includes(v));
- if(reached){milestones.push(...[512,1024,2048].filter(v=>v<=reached&&!milestones.includes(v)));if(reached===2048)won=true;save();modal(reached===2048?'2048! Победа!':'Новая вершина: '+reached+'!',reached===2048?'Цель достигнута! Можно продолжать до 4096.':'Отлично! Продолжай объединять плитки.',true)}
+ const reached=!won&&!milestones.includes(2048)&&grid.some(v=>v>=2048);
+ if(reached){milestones.push(2048);won=true;save();modal('2048! Победа!','Цель достигнута! Можно продолжать до 4096.',true)}
  else if(!possible()){over=true;modal('Ходы закончились','Результат: '+score.toLocaleString('ru-RU')+' очков. Начни новую игру и попробуй ещё раз.')}
 }
 let sx=0,sy=0;const board=$('board');board.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});board.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;move(Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'down':'up')});document.addEventListener('keydown',e=>{const dirs={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};if(dirs[e.key]){e.preventDefault();move(dirs[e.key])}});
